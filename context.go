@@ -23,6 +23,7 @@ func NewContext(dt Template) *Context {
 	}
 }
 
+// Add adds a template to the context
 func (ctx *Context) Add(p Template) {
 	key := ResolveName(p)
 	if s := ResolveNamespace(p); s != "" {
@@ -32,6 +33,7 @@ func (ctx *Context) Add(p Template) {
 	ctx.templates[key] = p
 }
 
+// GetTemplate finds a template for the XML element and returns a copy of it
 func (ctx *Context) GetTemplate(start *xml.StartElement) Template {
 	proto := ctx.lookupTemplate(start)
 
@@ -42,6 +44,7 @@ func (ctx *Context) GetTemplate(start *xml.StartElement) Template {
 	return clone(proto)
 }
 
+// SetDefaultTemplate sets the template to be used when no element-specific template was found
 func (ctx *Context) SetDefaultTemplate(t Template) {
 	ctx.defaultTemplate = t
 }
