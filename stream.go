@@ -7,8 +7,8 @@ import (
 	"sync"
 )
 
-// Conn manages a bidirectional XMPP stream using an underlying transport
-type Conn struct {
+// Stream manages a bidirectional XMPP stream using an underlying transport
+type Stream struct {
 	transport  io.ReadWriter
 	decoder    *xml.Decoder
 	encoder    *xml.Encoder
@@ -24,10 +24,10 @@ type Conn struct {
 }
 
 // Open a new bidirectional XMPP stream on the provided transport
-func Open(transport io.ReadWriter, outStream *StreamHeader) (*Conn, error) {
+func Open(transport io.ReadWriter, outStream *StreamHeader) (*Stream, error) {
 	var err error
 
-	conn := &Conn{
+	conn := &Stream{
 		transport: transport,
 		decoder:   xml.NewDecoder(transport),
 		encoder:   xml.NewEncoder(transport),
@@ -50,17 +50,17 @@ func Open(transport io.ReadWriter, outStream *StreamHeader) (*Conn, error) {
 }
 
 // Transport returns currently used transport object
-func (conn *Conn) Transport() io.ReadWriter {
+func (conn *Stream) Transport() io.ReadWriter {
 	return conn.transport
 }
 
 // Features returns current connection features
-func (conn *Conn) Features() *Features {
+func (conn *Stream) Features() *Features {
 	return conn.features
 }
 
 // Read reads and returns a message from the stream
-func (conn *Conn) Read() (interface{}, error) {
+func (conn *Stream) Read() (interface{}, error) {
 	for {
 		token, err := conn.decoder.Token()
 
@@ -84,13 +84,13 @@ func (conn *Conn) Read() (interface{}, error) {
 }
 
 // Close closes the XMPP stream. No writes can be performed afterwards.
-func (conn *Conn) Close() {
+func (conn *Stream) Close() {
 	conn.writeStreamEnd()
 	conn.encoder = nil
 }
 
 // Write writes an XML message to the XMPP stream
-func (conn *Conn) Write(msg interface{}) error {
+func (conn *Stream) Write(msg interface{}) error {
 	conn.Lock()
 	defer conn.Unlock()
 
@@ -102,14 +102,14 @@ func (conn *Conn) Write(msg interface{}) error {
 }
 
 // requestStream tries to open a bidirectional stream
-func (conn *Conn) requestStream(out *StreamHeader) (*StreamHeader, error) {
+func (conn *Stream) requestStream(out *StreamHeader) (*StreamHeader, error) {
 	conn.writeStreamHeader(out)
 
 	return conn.readStreamHeader()
 }
 
 // writeStreamHeader writes an XMPP stream opening tag
-func (conn *Conn) writeStreamHeader(stream *StreamHeader) error {
+func (conn *Stream) writeStreamHeader(stream *StreamHeader) error {
 	// Write <?xml version="1.0"?>
 	err := conn.encoder.EncodeToken(xml.ProcInst{
 		Target: "xml",
@@ -135,7 +135,7 @@ func (conn *Conn) writeStreamHeader(stream *StreamHeader) error {
 }
 
 // readStreamHeader reads and returns a stream header
-func (conn *Conn) readStreamHeader() (*StreamHeader, error) {
+func (conn *Stream) readStreamHeader() (*StreamHeader, error) {
 	for {
 		token, err := conn.decoder.Token()
 
@@ -161,7 +161,7 @@ func (conn *Conn) readStreamHeader() (*StreamHeader, error) {
 }
 
 // writeStreamEnd writes the XMPP stream end element
-func (conn *Conn) writeStreamEnd() error {
+func (conn *Stream) writeStreamEnd() error {
 	conn.Lock()
 	defer conn.Unlock()
 
@@ -176,7 +176,7 @@ func (conn *Conn) writeStreamEnd() error {
 
 // readFeatures reads stream features from the server. Should only be called
 // by a client directly after establishing an XMPP stream.
-func (conn *Conn) readFeatures() error {
+func (conn *Stream) readFeatures() error {
 	for {
 		msg, err := conn.Read()
 
