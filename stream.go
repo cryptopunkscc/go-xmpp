@@ -17,52 +17,101 @@ type Stream struct {
 
 	features *Features
 
-	outStream *StreamHeader
-	inStream  *StreamHeader
+	localHeader  *StreamHeader
+	remoteHeader *StreamHeader
 
 	sync.Mutex
 }
 
+type StreamFunc func(*StreamHeader) *StreamHeader
+
 // Open a new bidirectional XMPP stream on the provided transport
-func Open(transport io.ReadWriter, outStream *StreamHeader) (*Stream, error) {
+func Open(transport io.ReadWriter, header *StreamHeader) (*Stream, error) {
 	var err error
 
-	conn := &Stream{
+	s := &Stream{
 		transport: transport,
 		decoder:   xml.NewDecoder(transport),
 		encoder:   xml.NewEncoder(transport),
 	}
 
-	conn.outStream = outStream
-	conn.inStream, err = conn.requestStream(outStream)
+	s.localHeader = header
+	s.remoteHeader, err = s.requestStream(header)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = conn.readFeatures()
+	err = s.readFeatures()
 
 	if err != nil {
 		return nil, err
 	}
 
-	return conn, nil
+	return s, nil
+}
+
+func Accept(transport io.ReadWriter, header *StreamHeader) (*Stream, error) {
+	s := &Stream{
+		transport: transport,
+		decoder:   xml.NewDecoder(transport),
+		encoder:   xml.NewEncoder(transport),
+	}
+
+	remoteHeader, err := s.readStreamHeader()
+
+	if err != nil {
+		return nil, err
+	}
+
+	s.remoteHeader = remoteHeader
+	s.writeStreamHeader(header)
+
+	return s, nil
+}
+
+func AcceptFunc(transport io.ReadWriter, streamFunc StreamFunc) (*Stream, error) {
+	var err error
+	s := &Stream{
+		transport: transport,
+		decoder:   xml.NewDecoder(transport),
+		encoder:   xml.NewEncoder(transport),
+	}
+	s.remoteHeader, err = s.readStreamHeader()
+	if err != nil {
+		return nil, err
+	}
+	s.localHeader = streamFunc(s.remoteHeader)
+	if s.localHeader == nil {
+		return nil, errors.New("Stream function returned no header")
+	}
+	return s, s.writeStreamHeader(s.localHeader)
+}
+
+// RemoteHeader returns a stream header received from the remote host
+func (s *Stream) RemoteHeader() *StreamHeader {
+	return s.remoteHeader
+}
+
+// LocalHeader returns a stream header that was sent to the remote host
+func (s *Stream) LocalHeader() *StreamHeader {
+	return s.localHeader
 }
 
 // Transport returns currently used transport object
-func (conn *Stream) Transport() io.ReadWriter {
-	return conn.transport
+func (s *Stream) Transport() io.ReadWriter {
+	return s.transport
 }
 
 // Features returns current connection features
-func (conn *Stream) Features() *Features {
-	return conn.features
+func (s *Stream) Features() *Features {
+	return s.features
 }
 
 // Read reads and returns a message from the stream
-func (conn *Stream) Read() (interface{}, error) {
+func (s *Stream) Read() (interface{}, error) {
 	for {
-		token, err := conn.decoder.Token()
+		token, err := s.decoder.Token()
 
 		if err != nil {
 			return nil, err
@@ -70,7 +119,7 @@ func (conn *Stream) Read() (interface{}, error) {
 
 		switch start := token.(type) {
 		case xml.StartElement:
-			return StreamContext.DecodeElement(conn.decoder, &start)
+			return StreamContext.DecodeElement(s.decoder, &start)
 
 		case xml.EndElement: // </stream>
 			return nil, ErrEndOfStream
@@ -84,34 +133,34 @@ func (conn *Stream) Read() (interface{}, error) {
 }
 
 // Close closes the XMPP stream. No writes can be performed afterwards.
-func (conn *Stream) Close() {
-	conn.writeStreamEnd()
-	conn.encoder = nil
+func (s *Stream) Close() {
+	s.writeStreamEnd()
+	s.encoder = nil
 }
 
 // Write writes an XML message to the XMPP stream
-func (conn *Stream) Write(msg interface{}) error {
-	conn.Lock()
-	defer conn.Unlock()
+func (s *Stream) Write(msg interface{}) error {
+	s.Lock()
+	defer s.Unlock()
 
-	if err := conn.encoder.Encode(msg); err != nil {
+	if err := s.encoder.Encode(msg); err != nil {
 		return err
 	}
 
-	return conn.encoder.Flush()
+	return s.encoder.Flush()
 }
 
 // requestStream tries to open a bidirectional stream
-func (conn *Stream) requestStream(out *StreamHeader) (*StreamHeader, error) {
-	conn.writeStreamHeader(out)
+func (s *Stream) requestStream(out *StreamHeader) (*StreamHeader, error) {
+	s.writeStreamHeader(out)
 
-	return conn.readStreamHeader()
+	return s.readStreamHeader()
 }
 
 // writeStreamHeader writes an XMPP stream opening tag
-func (conn *Stream) writeStreamHeader(stream *StreamHeader) error {
+func (s *Stream) writeStreamHeader(stream *StreamHeader) error {
 	// Write <?xml version="1.0"?>
-	err := conn.encoder.EncodeToken(xml.ProcInst{
+	err := s.encoder.EncodeToken(xml.ProcInst{
 		Target: "xml",
 		Inst:   []byte(`version="1.0"`),
 	})
@@ -121,23 +170,23 @@ func (conn *Stream) writeStreamHeader(stream *StreamHeader) error {
 	}
 
 	start := stream.XMLStartElement()
-	conn.streamEnd = start.End() // Store matching end element
+	s.streamEnd = start.End() // Store matching end element
 
-	conn.Lock()
-	defer conn.Unlock()
+	s.Lock()
+	defer s.Unlock()
 
-	err = conn.encoder.EncodeToken(start)
+	err = s.encoder.EncodeToken(start)
 	if err != nil {
 		return err
 	}
 
-	return conn.encoder.Flush()
+	return s.encoder.Flush()
 }
 
 // readStreamHeader reads and returns a stream header
-func (conn *Stream) readStreamHeader() (*StreamHeader, error) {
+func (s *Stream) readStreamHeader() (*StreamHeader, error) {
 	for {
-		token, err := conn.decoder.Token()
+		token, err := s.decoder.Token()
 
 		if err != nil {
 			return nil, err
@@ -145,13 +194,13 @@ func (conn *Stream) readStreamHeader() (*StreamHeader, error) {
 
 		switch start := token.(type) {
 		case xml.ProcInst:
-			if conn.piReceived {
+			if s.piReceived {
 				return nil, ErrStreamError
 			}
-			conn.piReceived = true // PI is only valid once
+			s.piReceived = true // PI is only valid once
 
 		case xml.StartElement:
-			conn.piReceived = true // PI is only valid before any elements
+			s.piReceived = true // PI is only valid before any elements
 			return ParseStreamHeader(&start), nil
 
 		default:
@@ -161,24 +210,24 @@ func (conn *Stream) readStreamHeader() (*StreamHeader, error) {
 }
 
 // writeStreamEnd writes the XMPP stream end element
-func (conn *Stream) writeStreamEnd() error {
-	conn.Lock()
-	defer conn.Unlock()
+func (s *Stream) writeStreamEnd() error {
+	s.Lock()
+	defer s.Unlock()
 
-	err := conn.encoder.EncodeToken(conn.streamEnd)
+	err := s.encoder.EncodeToken(s.streamEnd)
 
 	if err != nil {
 		return err
 	}
 
-	return conn.encoder.Flush()
+	return s.encoder.Flush()
 }
 
 // readFeatures reads stream features from the server. Should only be called
 // by a client directly after establishing an XMPP stream.
-func (conn *Stream) readFeatures() error {
+func (s *Stream) readFeatures() error {
 	for {
-		msg, err := conn.Read()
+		msg, err := s.Read()
 
 		if err != nil {
 			return err
@@ -186,7 +235,7 @@ func (conn *Stream) readFeatures() error {
 
 		switch typed := msg.(type) {
 		case *Features:
-			conn.features = typed
+			s.features = typed
 			return nil
 
 		default:
