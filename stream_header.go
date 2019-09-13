@@ -8,6 +8,7 @@ import (
 const (
 	NamespaceClient = "jabber:client"
 	NamespaceServer = "jabber:server"
+	DefaultVersion  = "1.0"
 )
 
 // StreamHeader represents stream info exchanged in the initial <stream/> element
@@ -22,7 +23,7 @@ type StreamHeader struct {
 // ClientHeader returns a stream header in client protocol namespace
 func ClientHeader(from string, to string) *StreamHeader {
 	return &StreamHeader{
-		Version:   "1.0",
+		Version:   DefaultVersion,
 		Namespace: NamespaceClient,
 		From:      from,
 		To:        to,
@@ -30,27 +31,38 @@ func ClientHeader(from string, to string) *StreamHeader {
 }
 
 // XMLStartElement returns an XML start element containing all stream info
-func (stream *StreamHeader) XMLStartElement() (start xml.StartElement) {
+func (header *StreamHeader) XMLStartElement() (start xml.StartElement) {
 	start.Name = xml.Name{
-		Space: stream.Namespace,
+		Space: header.Namespace,
 		Local: "stream:stream",
 	}
 	start.Attr = make([]xml.Attr, 0)
-	if stream.To != "" {
-		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", "to"}, stream.To})
+	if header.To != "" {
+		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", "to"}, header.To})
 	}
-	if stream.From != "" {
-		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", "from"}, stream.From})
+	if header.From != "" {
+		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", "from"}, header.From})
 	}
-	if stream.ID != "" {
-		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", "id"}, stream.ID})
+	if header.ID != "" {
+		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", "id"}, header.ID})
 	}
 	start.Attr = append(start.Attr,
-		xml.Attr{xml.Name{"", "version"}, "1.0"},
+		xml.Attr{xml.Name{"", "version"}, header.Version},
 		xml.Attr{xml.Name{"", "xml:lang"}, "en"},
-		xml.Attr{xml.Name{"", "xmlns:stream"}, "http://etherx.jabber.org/streams"},
+		xml.Attr{xml.Name{"", "xmlns:stream"}, nsEtherXStreams},
 	)
 	return
+}
+
+// Reply returns a server stream header
+func (header *StreamHeader) Reply(id string) *StreamHeader {
+	return &StreamHeader{
+		To:        header.From,
+		From:      header.To,
+		Namespace: header.Namespace,
+		Version:   header.Version,
+		ID:        id,
+	}
 }
 
 // ParseStreamHeader decodes the opening of the XML stream without touching

@@ -51,26 +51,7 @@ func Open(transport io.ReadWriter, header *StreamHeader) (*Stream, error) {
 	return s, nil
 }
 
-func Accept(transport io.ReadWriter, header *StreamHeader) (*Stream, error) {
-	s := &Stream{
-		transport: transport,
-		decoder:   xml.NewDecoder(transport),
-		encoder:   xml.NewEncoder(transport),
-	}
-
-	remoteHeader, err := s.readStreamHeader()
-
-	if err != nil {
-		return nil, err
-	}
-
-	s.remoteHeader = remoteHeader
-	s.writeStreamHeader(header)
-
-	return s, nil
-}
-
-func AcceptFunc(transport io.ReadWriter, streamFunc StreamFunc) (*Stream, error) {
+func Accept(transport io.ReadWriter) (*Stream, error) {
 	var err error
 	s := &Stream{
 		transport: transport,
@@ -81,11 +62,7 @@ func AcceptFunc(transport io.ReadWriter, streamFunc StreamFunc) (*Stream, error)
 	if err != nil {
 		return nil, err
 	}
-	s.localHeader = streamFunc(s.remoteHeader)
-	if s.localHeader == nil {
-		return nil, errors.New("Stream function returned no header")
-	}
-	return s, s.writeStreamHeader(s.localHeader)
+	return s, nil
 }
 
 // RemoteHeader returns a stream header received from the remote host
@@ -136,6 +113,12 @@ func (s *Stream) Read() (interface{}, error) {
 func (s *Stream) Close() {
 	s.writeStreamEnd()
 	s.encoder = nil
+}
+
+// WriteStreamHeader sends a stream open header
+func (s *Stream) WriteStreamHeader(header *StreamHeader) error {
+	s.localHeader = header
+	return s.writeStreamHeader(header)
 }
 
 // Write writes an XML message to the XMPP stream
@@ -228,7 +211,6 @@ func (s *Stream) writeStreamEnd() error {
 func (s *Stream) readFeatures() error {
 	for {
 		msg, err := s.Read()
-
 		if err != nil {
 			return err
 		}
