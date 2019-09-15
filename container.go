@@ -13,7 +13,8 @@ func (c *Container) ChildCount(name string) int {
 	count := 0
 
 	for _, child := range c.Children {
-		if ResolveName(child) == name {
+		n, _ := Identify(child)
+		if n == name {
 			count++
 		}
 	}
@@ -28,7 +29,8 @@ func (c *Container) Child(name string) Template {
 	}
 
 	for _, child := range c.Children {
-		if ResolveName(child) == name {
+		n, _ := Identify(child)
+		if n == name {
 			return child
 		}
 	}

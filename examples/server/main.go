@@ -22,10 +22,20 @@ func handleClient(conn net.Conn) {
 	}
 	defer stream.Close()
 
+	// Use RemoteHeader() to verify stream properties, route to a vhost, etc
+	fmt.Println("Client requested connection to", stream.RemoteHeader().To)
+
 	// Send back our stream header and features
 	header := stream.RemoteHeader().Reply("fakeid")
 	stream.WriteStreamHeader(header)
-	stream.Write(&xmpp.Features{})
+
+	// Send stream features
+	features := &xmpp.Features{}
+	features.Add(&xmpp.FeatureStartTLS{})
+	stream.Write(features)
+
+	// Proceed reading/writing messages
+	// ...
 }
 
 func init() {

@@ -25,11 +25,11 @@ func NewContext(dt Template) *Context {
 
 // Add adds a template to the context
 func (ctx *Context) Add(p Template) {
-	key := ResolveName(p)
-	if s := ResolveNamespace(p); s != "" {
-		key = s + " " + key
+	name, space := Identify(p)
+	key := name
+	if space != "" {
+		key = space + " " + name
 	}
-
 	ctx.templates[key] = p
 }
 

@@ -54,9 +54,12 @@ func TestDecodeAll(t *testing.T) {
 	list, err := s.DecodeAll(dec)
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(list))
-	assert.Equal(t, "basic", ResolveName(list[0]))
-	assert.Equal(t, "basic", ResolveName(list[1]))
-	assert.Equal(t, "random", ResolveName(list[2]))
+	n, _ := Identify(list[0])
+	assert.Equal(t, "basic", n)
+	n, _ = Identify(list[1])
+	assert.Equal(t, "basic", n)
+	n, _ = Identify(list[2])
+	assert.Equal(t, "random", n)
 }
 
 func TestDefault(t *testing.T) {
