@@ -2,8 +2,8 @@ package xmpp
 
 func init() {
 	initStreamContext()
-	initMessageContext()
-	initIQContext()
-	initPresenceContext()
-	initFeaturesContext()
+	initFeatures()
+	initIQ()
+	initPresence()
+	initMessage()
 }

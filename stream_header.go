@@ -20,11 +20,11 @@ type StreamHeader struct {
 	ID        string
 }
 
-// ClientHeader returns a stream header in client protocol namespace
-func ClientHeader(from string, to string) *StreamHeader {
+// NewHeader returns a stream header in client protocol namespace
+func NewHeader(namesapce string, from string, to string) *StreamHeader {
 	return &StreamHeader{
 		Version:   DefaultVersion,
-		Namespace: NamespaceClient,
+		Namespace: namesapce,
 		From:      from,
 		To:        to,
 	}

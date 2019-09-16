@@ -12,39 +12,43 @@ var bind string
 var port uint
 
 func handleClient(conn net.Conn) {
-	fmt.Println("Connection from", conn.RemoteAddr())
+	fmt.Println("TCP connection from", conn.RemoteAddr())
 	defer conn.Close()
 
-	// Wait for the client to open an XMPP stream
-	stream, err := xmpp.Accept(conn)
+	// Create a stream over the TCP connection
+	stream := xmpp.NewStream(conn)
+
+	// Read stream header from the client
+	header, err := stream.ReadHeader()
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Client requested connection to", header.To)
+
+	// Send back a stream header
+	stream.WriteHeader(header.Reply("fakeid"))
 	defer stream.Close()
-
-	// Use RemoteHeader() to verify stream properties, route to a vhost, etc
-	fmt.Println("Client requested connection to", stream.RemoteHeader().To)
-
-	// Send back our stream header and features
-	header := stream.RemoteHeader().Reply("fakeid")
-	stream.WriteStreamHeader(header)
 
 	// Send stream features
 	features := &xmpp.Features{}
-	features.Add(&xmpp.FeatureStartTLS{})
+	features.AddChild(&xmpp.FeatureStartTLS{})
 	stream.Write(features)
 
-	// Proceed reading/writing messages
+	// Continue reading/writing XMPP messages
 	// ...
 }
 
 func init() {
+	// Configure command-line flags
 	flag.StringVar(&bind, "bind", "127.0.0.1", "Bind to this address")
 	flag.UintVar(&port, "port", 5222, "Specify port to listen on")
 }
 
 func main() {
+	// Parse command-line options
 	flag.Parse()
+
+	// Start a TCP server
 	address := fmt.Sprintf("%s:%d", bind, port)
 	fmt.Println("Starting server at", address)
 	srv, err := net.Listen("tcp", address)
@@ -59,7 +63,7 @@ func main() {
 			panic(err)
 		}
 
-		// Pass the connection to an XMPP handler
+		// Pass the connection to a client handler
 		go handleClient(conn)
 	}
 }

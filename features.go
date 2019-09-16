@@ -43,18 +43,17 @@ func (m *FeatureMechanisms) Include(name string) bool {
 	return false
 }
 
-func (iq *Features) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
-	var err error
-
+func (iq *Features) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) (err error) {
 	iq.Children, err = FeaturesContext.DecodeAll(dec)
-
-	return err
+	return
 }
 
-func initFeaturesContext() {
+func initFeatures() {
 	FeaturesContext.Add(&FeatureStartTLS{})
 	FeaturesContext.Add(&FeatureRegister{})
 	FeaturesContext.Add(&FeatureBind{})
 	FeaturesContext.Add(&FeatureMechanisms{})
 	FeaturesContext.Add(&FeatureCompression{})
+
+	StreamContext.Add(&Features{})
 }

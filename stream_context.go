@@ -58,7 +58,6 @@ func initStreamContext() {
 	StreamContext.Add(&Error{})
 	StreamContext.Add(&TLSFailure{})
 	StreamContext.Add(&SASLFailure{})
-	StreamContext.Add(&Features{})
 	StreamContext.Add(&Proceed{})
 	StreamContext.Add(&StartTLS{})
 	StreamContext.Add(&Success{})

@@ -11,7 +11,7 @@ import (
 func TestIQUnmarshalling(t *testing.T) {
 	rawXML := `<iq id='yhc13a95' type='set'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'><resource>balcony</resource></bind></iq>`
 	dec := xml.NewDecoder(strings.NewReader(rawXML))
-	stanza := &Stanza{Stanza: "iq", Context: IQContext}
+	stanza := &OldStanza{Stanza: "iq", Context: IQContext}
 
 	assert.NoError(t, dec.Decode(stanza))
 
@@ -21,13 +21,13 @@ func TestIQUnmarshalling(t *testing.T) {
 }
 
 func TestStanzaMarshalling(t *testing.T) {
-	src := &Stanza{
+	src := &OldStanza{
 		Stanza: "iq",
 		ID:     "testid",
 		Type:   "set",
 	}
 
-	src.Add(&Bind{})
+	src.AddChild(&Bind{})
 
 	builder := &strings.Builder{}
 	enc := xml.NewEncoder(builder)
@@ -36,7 +36,7 @@ func TestStanzaMarshalling(t *testing.T) {
 
 	dec := xml.NewDecoder(strings.NewReader(data))
 	item, err := StreamContext.Decode(dec)
-	dst := item.(*Stanza)
+	dst := item.(*OldStanza)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "iq", dst.Stanza)

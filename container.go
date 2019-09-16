@@ -38,7 +38,7 @@ func (c *Container) Child(name string) Template {
 	return nil
 }
 
-func (c *Container) Add(child Template) {
+func (c *Container) AddChild(child Template) {
 	if c.Children == nil {
 		c.Children = make([]Template, 0)
 	}

@@ -3,67 +3,39 @@ package xmpp
 import "encoding/xml"
 
 type Stanza struct {
-	Container
-	Context *Context
-	Stanza  string
-	ID      string
-	From    string
-	To      string
-	Type    string
-	Lang    string
+	ID   string `xml:"id,attr,omitempty"`
+	To   string `xml:"to,attr,omitempty"`
+	From string `xml:"from,attr,omitempty"`
+	Type string `xml:"type,attr,omitempty"`
+	Lang string `xml:"lang,attr,omitempty"`
 }
 
-func (stanza *Stanza) Name() string {
-	return stanza.Stanza
-}
-
-func (stanza *Stanza) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
-	var err error
-
-	stanza.copyStartElement(&start)
-	stanza.Children, err = stanza.Context.DecodeAll(dec)
-
-	return err
-}
-
-func (stanza *Stanza) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
-	s := stanza.startElement()
-	enc.EncodeToken(s)
-
-	if err := EncodeAll(enc, stanza.Children); err != nil {
-		return err
-	}
-
-	return enc.EncodeToken(s.End())
-}
-
-func (stanza *Stanza) startElement() xml.StartElement {
-	s := xml.StartElement{
+func (s *Stanza) startElement(name string) xml.StartElement {
+	se := xml.StartElement{
 		Name: xml.Name{
-			Local: stanza.Stanza,
+			Local: name,
 		},
 	}
-
-	s.Attr = make([]xml.Attr, 0)
+	se.Attr = make([]xml.Attr, 0)
 
 	set := func(f, v string) {
 		if v != "" {
-			s.Attr = append(s.Attr, xml.Attr{Name: xml.Name{Local: f}, Value: v})
+			se.Attr = append(se.Attr, xml.Attr{Name: xml.Name{Local: f}, Value: v})
 		}
 	}
 
-	set("id", stanza.ID)
-	set("from", stanza.From)
-	set("to", stanza.To)
-	set("type", stanza.Type)
-	set("xml:lang", stanza.Lang)
+	set("id", s.ID)
+	set("from", s.From)
+	set("to", s.To)
+	set("type", s.Type)
+	set("xml:lang", s.Lang)
 
-	return s
+	return se
 }
 
-func (stanza *Stanza) copyStartElement(s *xml.StartElement) {
+func (s *Stanza) copyStartElement(se *xml.StartElement) {
 	get := func(f string) string {
-		for _, attr := range s.Attr {
+		for _, attr := range se.Attr {
 			if attr.Name.Local == f {
 				return attr.Value
 			}
@@ -71,10 +43,9 @@ func (stanza *Stanza) copyStartElement(s *xml.StartElement) {
 		return ""
 	}
 
-	stanza.Stanza = s.Name.Local
-	stanza.ID = get("id")
-	stanza.From = get("from")
-	stanza.To = get("to")
-	stanza.Type = get("type")
-	stanza.Lang = get("xml:lang")
+	s.ID = get("id")
+	s.From = get("from")
+	s.To = get("to")
+	s.Type = get("type")
+	s.Lang = get("xml:lang")
 }
