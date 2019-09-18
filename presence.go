@@ -33,6 +33,27 @@ type PresencePriority struct {
 	Priority int      `xml:",chardata"`
 }
 
+func (p *Presence) Status() string {
+	if status, ok := p.Child("status").(*PresenceStatus); ok {
+		return status.Status
+	}
+	return ""
+}
+
+func (p *Presence) Show() string {
+	if show, ok := p.Child("show").(*PresenceShow); ok {
+		return show.Show
+	}
+	return ""
+}
+
+func (p *Presence) Priority() int {
+	if prio, ok := p.Child("priority").(*PresencePriority); ok {
+		return prio.Priority
+	}
+	return 0
+}
+
 func (p *Presence) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
 	var err error
 

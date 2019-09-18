@@ -19,8 +19,8 @@ type RosterQuery struct {
 type RosterItem struct {
 	XMLName      xml.Name `xml:"item"`
 	JID          string   `xml:"jid,attr"`
-	Name         string   `xml:"name,attr"`
-	Subscription string   `xml:"subscription,attr"`
+	Name         string   `xml:"name,attr,omitempty"`
+	Subscription string   `xml:"subscription,attr,omitempty"`
 	Group        []string `xml:"group"`
 }
 

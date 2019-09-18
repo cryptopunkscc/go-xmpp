@@ -37,6 +37,13 @@ func (m *Message) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
 	return enc.EncodeToken(s.End())
 }
 
+func (m *Message) Body() *MessageBody {
+	if b := m.Child("body"); b != nil {
+		return b.(*MessageBody)
+	}
+	return nil
+}
+
 func initMessage() {
 	MessageContext.Add(&MessageBody{})
 	StreamContext.Add(&Message{Context: MessageContext})
