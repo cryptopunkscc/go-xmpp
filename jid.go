@@ -2,11 +2,11 @@ package xmpp
 
 import "strings"
 
-// JabberID is described by https://tools.ietf.org/html/rfc6122
+// JID is described by https://tools.ietf.org/html/rfc6122
 //
 // jid = [ localpart "@" ] domainpart [ "/" resourcepart ]
 
-// JID is the type used to store Jabber IDs
+// JID is the type used to store JIDs
 type JID string
 
 // Valid verifies the validity of the JID [STUB]
