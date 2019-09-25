@@ -17,12 +17,8 @@ type Stanza interface {
 }
 
 func stanzaToStartElement(s Stanza) xml.StartElement {
-	name, _ := Identify(s)
-
 	se := xml.StartElement{
-		Name: xml.Name{
-			Local: name,
-		},
+		Name: Identify(s),
 	}
 	se.Attr = make([]xml.Attr, 0)
 

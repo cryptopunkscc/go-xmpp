@@ -2,9 +2,6 @@ package xmpp
 
 import "encoding/xml"
 
-// MessageContext is a space for all elements defined within the message stanza
-var MessageContext = NewContext(&Generic{})
-
 // A Message represents a message stanza
 type Message struct {
 	XMLName xml.Name `xml:"message"`
@@ -13,8 +10,8 @@ type Message struct {
 	From    string   `xml:"from,attr,omitempty"`
 	Type    string   `xml:"type,attr,omitempty"`
 	Lang    string   `xml:"lang,attr,omitempty"`
+	Body    string   `xml:"body,omitempty"`
 	Container
-	*Context
 }
 
 // GetID returns the id field
@@ -47,39 +44,35 @@ func (m *Message) SetType(s string) { m.Type = s }
 // SetLang sets the lang field
 func (m *Message) SetLang(s string) { m.Lang = s }
 
-type MessageBody struct {
-	XMLName xml.Name `xml:"body"`
-	Content string   `xml:",chardata"`
-}
-
 func (m *Message) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
-	var err error
-
-	startElementToStanza(start, m)
-	m.Children, err = m.DecodeAll(dec)
-
-	return err
-}
-
-func (m *Message) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
-	s := stanzaToStartElement(m)
-	enc.EncodeToken(s)
-
-	if err := EncodeAll(enc, m.Children); err != nil {
-		return err
+	type Raw Message
+	type comboType struct {
+		Raw
+		Proxies []proxy `xml:",any"`
 	}
-
-	return enc.EncodeToken(s.End())
-}
-
-func (m *Message) Body() *MessageBody {
-	if b := m.Child("body"); b != nil {
-		return b.(*MessageBody)
+	combo := &comboType{}
+	if err := dec.DecodeElement(combo, &start); err != nil {
+		panic(err)
 	}
+	*m = Message(combo.Raw)
+	m.XMLName = start.Name
+	m.Children = proxyToInterface(combo.Proxies)
 	return nil
 }
 
+func (m *Message) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
+	type Raw Message
+	type combo struct {
+		Raw
+		Children []interface{} `xml:",any"`
+	}
+	raw := &combo{}
+	raw.Raw = Raw(*m)
+	start.Name = m.XMLName
+	raw.Children = m.Container.Children
+	return enc.EncodeElement(raw, start)
+}
+
 func initMessage() {
-	MessageContext.Add(&MessageBody{})
-	StreamContext.Add(&Message{Context: MessageContext})
+	AddElement(&Message{})
 }

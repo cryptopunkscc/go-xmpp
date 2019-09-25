@@ -2,13 +2,10 @@ package xmpp
 
 import "encoding/xml"
 
-var IQContext = NewContext(&Generic{})
-
 type IQ struct {
 	XMLName xml.Name `xml:"iq"`
 	StanzaFields
 	Container
-	*Context
 }
 
 type RosterQuery struct {
@@ -30,29 +27,38 @@ func (iq *IQ) Result() bool {
 }
 
 func (iq *IQ) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
-	var err error
-
-	iq.copyStartElement(&start)
-	iq.Children, err = iq.DecodeAll(dec)
-
-	return err
+	type Raw IQ
+	type comboType struct {
+		Raw
+		Proxies []proxy `xml:",any"`
+	}
+	combo := &comboType{}
+	if err := dec.DecodeElement(combo, &start); err != nil {
+		panic(err)
+	}
+	*iq = IQ(combo.Raw)
+	iq.XMLName = start.Name
+	iq.Children = proxyToInterface(combo.Proxies)
+	return nil
 }
 
 func (iq *IQ) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
-	s := iq.startElement("iq")
-	enc.EncodeToken(s)
-
-	if err := EncodeAll(enc, iq.Children); err != nil {
-		return err
+	type Raw IQ
+	type combo struct {
+		Raw
+		Children []interface{} `xml:",any"`
 	}
-
-	return enc.EncodeToken(s.End())
+	raw := &combo{}
+	raw.Raw = Raw(*iq)
+	start.Name = iq.XMLName
+	raw.Children = iq.Container.Children
+	return enc.EncodeElement(raw, start)
 }
 
 func initIQ() {
-	IQContext.Add(&Bind{})
-	IQContext.Add(&Error{})
-	IQContext.Add(&RosterQuery{})
+	AddElement(&Bind{})
+	AddElement(&Error{})
+	AddElement(&RosterQuery{})
 
-	StreamContext.Add(&IQ{Context: IQContext})
+	AddElement(&IQ{})
 }

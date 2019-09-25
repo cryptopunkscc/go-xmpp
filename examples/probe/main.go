@@ -49,8 +49,8 @@ func printStreamHeader(h *xmpp.StreamHeader) {
 func printFeatures(features *xmpp.Features) {
 	fmt.Println("Stream features:")
 	for _, f := range features.Children {
-		n, _ := xmpp.Identify(f)
-		fmt.Println("-", n)
+		id := xmpp.Identify(f)
+		fmt.Println("-", id.Local)
 	}
 	fmt.Println()
 }

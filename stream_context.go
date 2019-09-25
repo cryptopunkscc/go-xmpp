@@ -2,8 +2,6 @@ package xmpp
 
 import "encoding/xml"
 
-var StreamContext = NewContext(nil)
-
 type Abort struct {
 	XMLName xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-sasl abort"`
 }
@@ -51,14 +49,14 @@ type Success struct {
 }
 
 func initStreamContext() {
-	StreamContext.Add(&Abort{})
-	StreamContext.Add(&Auth{})
-	StreamContext.Add(&Bind{})
-	StreamContext.Add(&Challenge{})
-	StreamContext.Add(&Error{})
-	StreamContext.Add(&TLSFailure{})
-	StreamContext.Add(&SASLFailure{})
-	StreamContext.Add(&Proceed{})
-	StreamContext.Add(&StartTLS{})
-	StreamContext.Add(&Success{})
+	AddElement(&Abort{})
+	AddElement(&Auth{})
+	AddElement(&Bind{})
+	AddElement(&Challenge{})
+	AddElement(&Error{})
+	AddElement(&TLSFailure{})
+	AddElement(&SASLFailure{})
+	AddElement(&Proceed{})
+	AddElement(&StartTLS{})
+	AddElement(&Success{})
 }

@@ -41,7 +41,9 @@ func (s *Stream) Read() (interface{}, error) {
 
 		switch typed := token.(type) {
 		case xml.StartElement:
-			return StreamContext.DecodeElement(s.decoder, &typed)
+			p := &proxy{}
+			s.decoder.DecodeElement(p, &typed)
+			return p.Object, nil
 
 		case xml.EndElement: // </stream>
 			return nil, ErrEndOfStream
@@ -134,8 +136,8 @@ func (s *Stream) ReadFeatures() (*Features, error) {
 	if feats, ok := msg.(*Features); ok {
 		return feats, nil
 	}
-	n, _ := Identify(msg)
-	return nil, fmt.Errorf("ReadFeatures: unexpected message: %s", n)
+	id := Identify(msg)
+	return nil, fmt.Errorf("ReadFeatures: unexpected message: %s", id.Local)
 }
 
 // writeStreamEnd writes the XMPP stream end element
