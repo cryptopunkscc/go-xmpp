@@ -4,7 +4,11 @@ import "encoding/xml"
 
 type IQ struct {
 	XMLName xml.Name `xml:"iq"`
-	StanzaFields
+	ID      string   `xml:"id,attr,omitempty"`
+	To      string   `xml:"to,attr,omitempty"`
+	From    string   `xml:"from,attr,omitempty"`
+	Type    string   `xml:"type,attr,omitempty"`
+	Lang    string   `xml:"lang,attr,omitempty"`
 	Container
 }
 
@@ -25,6 +29,36 @@ type RosterItem struct {
 func (iq *IQ) Result() bool {
 	return iq.Type == "result"
 }
+
+// GetID returns the id field
+func (m *IQ) GetID() string { return m.ID }
+
+// GetFrom returns the from field
+func (m *IQ) GetFrom() string { return m.From }
+
+// GetTo returns the to field
+func (m *IQ) GetTo() string { return m.To }
+
+// GetType returns the type field
+func (m *IQ) GetType() string { return m.Type }
+
+// GetLang returns the lang field
+func (m *IQ) GetLang() string { return m.Lang }
+
+// SetID sets the id field
+func (m *IQ) SetID(s string) { m.ID = s }
+
+// SetFrom sets the from field
+func (m *IQ) SetFrom(s string) { m.From = s }
+
+// SetTo sets the to field
+func (m *IQ) SetTo(s string) { m.To = s }
+
+// SetType sets the type field
+func (m *IQ) SetType(s string) { m.Type = s }
+
+// SetLang sets the lang field
+func (m *IQ) SetLang(s string) { m.Lang = s }
 
 func (iq *IQ) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
 	type Raw IQ
@@ -50,7 +84,7 @@ func (iq *IQ) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
 	}
 	raw := &combo{}
 	raw.Raw = Raw(*iq)
-	start.Name = iq.XMLName
+	start.Name = xml.Name{Local: "iq"}
 	raw.Children = iq.Container.Children
 	return enc.EncodeElement(raw, start)
 }

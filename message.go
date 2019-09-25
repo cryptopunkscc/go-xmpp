@@ -68,7 +68,7 @@ func (m *Message) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
 	}
 	raw := &combo{}
 	raw.Raw = Raw(*m)
-	start.Name = m.XMLName
+	start.Name = xml.Name{Local: "message"}
 	raw.Children = m.Container.Children
 	return enc.EncodeElement(raw, start)
 }

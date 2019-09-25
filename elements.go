@@ -27,6 +27,9 @@ func lookupTemplate(name xml.Name) interface{} {
 	if e, ok := elements[name]; ok {
 		return e
 	}
+	if e, ok := elements[xml.Name{Local: name.Local}]; ok {
+		return e
+	}
 	return nil
 }
 
