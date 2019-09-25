@@ -5,6 +5,7 @@ import "encoding/xml"
 // MessageContext is a space for all elements defined within the message stanza
 var MessageContext = NewContext(&Generic{})
 
+// A Message represents a message stanza
 type Message struct {
 	XMLName xml.Name `xml:"message"`
 	ID      string   `xml:"id,attr,omitempty"`
@@ -12,7 +13,6 @@ type Message struct {
 	From    string   `xml:"from,attr,omitempty"`
 	Type    string   `xml:"type,attr,omitempty"`
 	Lang    string   `xml:"lang,attr,omitempty"`
-	Body    string   `xml:"body,omitempty"`
 	Container
 	*Context
 }
@@ -70,6 +70,13 @@ func (m *Message) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
 	}
 
 	return enc.EncodeToken(s.End())
+}
+
+func (m *Message) Body() *MessageBody {
+	if b := m.Child("body"); b != nil {
+		return b.(*MessageBody)
+	}
+	return nil
 }
 
 func initMessage() {
