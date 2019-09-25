@@ -2,15 +2,23 @@ package xmpp
 
 import "encoding/xml"
 
-type Stanza struct {
-	ID   string `xml:"id,attr,omitempty"`
-	To   string `xml:"to,attr,omitempty"`
-	From string `xml:"from,attr,omitempty"`
-	Type string `xml:"type,attr,omitempty"`
-	Lang string `xml:"lang,attr,omitempty"`
+type Stanza interface {
+	GetID() string
+	GetFrom() string
+	GetTo() string
+	GetType() string
+	GetLang() string
+
+	SetID(string)
+	SetFrom(string)
+	SetTo(string)
+	SetType(string)
+	SetLang(string)
 }
 
-func (s *Stanza) startElement(name string) xml.StartElement {
+func stanzaToStartElement(s Stanza) xml.StartElement {
+	name, _ := Identify(s)
+
 	se := xml.StartElement{
 		Name: xml.Name{
 			Local: name,
@@ -24,16 +32,16 @@ func (s *Stanza) startElement(name string) xml.StartElement {
 		}
 	}
 
-	set("id", s.ID)
-	set("from", s.From)
-	set("to", s.To)
-	set("type", s.Type)
-	set("xml:lang", s.Lang)
+	set("id", s.GetID())
+	set("from", s.GetFrom())
+	set("to", s.GetTo())
+	set("type", s.GetType())
+	set("xml:lang", s.GetLang())
 
 	return se
 }
 
-func (s *Stanza) copyStartElement(se *xml.StartElement) {
+func startElementToStanza(se xml.StartElement, s Stanza) {
 	get := func(f string) string {
 		for _, attr := range se.Attr {
 			if attr.Name.Local == f {
@@ -43,9 +51,9 @@ func (s *Stanza) copyStartElement(se *xml.StartElement) {
 		return ""
 	}
 
-	s.ID = get("id")
-	s.From = get("from")
-	s.To = get("to")
-	s.Type = get("type")
-	s.Lang = get("xml:lang")
+	s.SetID(get("id"))
+	s.SetFrom(get("from"))
+	s.SetTo(get("to"))
+	s.SetType(get("type"))
+	s.SetLang(get("xml:lang"))
 }

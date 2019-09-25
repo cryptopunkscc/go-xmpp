@@ -6,7 +6,7 @@ var IQContext = NewContext(&Generic{})
 
 type IQ struct {
 	XMLName xml.Name `xml:"iq"`
-	Stanza
+	StanzaFields
 	Container
 	*Context
 }

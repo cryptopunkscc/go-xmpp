@@ -13,7 +13,7 @@ var PresenceContext = NewContext(&Generic{})
 
 type Presence struct {
 	XMLName xml.Name `xml:"presence"`
-	Stanza
+	StanzaFields
 	Container
 	*Context
 }
