@@ -15,6 +15,7 @@ type Capability struct {
 }
 
 func init() {
-	xmpp.PresenceContext.Add(&Capability{}) // https://xmpp.org/extensions/xep-0115.html#howitworks
-	xmpp.FeaturesContext.Add(&Capability{}) // https://xmpp.org/extensions/xep-0115.html#stream
+	// https://xmpp.org/extensions/xep-0115.html#howitworks
+	// https://xmpp.org/extensions/xep-0115.html#stream
+	xmpp.AddElement(&Capability{})
 }

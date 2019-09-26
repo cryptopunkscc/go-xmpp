@@ -36,6 +36,6 @@ type Item struct {
 }
 
 func init() {
-	xmpp.IQContext.Add(&QueryInfo{})
-	xmpp.IQContext.Add(&QueryItems{})
+	xmpp.AddElement(&QueryInfo{})
+	xmpp.AddElement(&QueryItems{})
 }

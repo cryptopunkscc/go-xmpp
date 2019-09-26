@@ -11,5 +11,5 @@ type Ping struct {
 }
 
 func init() {
-	xmpp.IQContext.Add(&Ping{})
+	xmpp.AddElement(&Ping{})
 }
