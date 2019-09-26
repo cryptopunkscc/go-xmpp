@@ -4,14 +4,14 @@ import "encoding/xml"
 
 type Stanza interface {
 	GetID() string
-	GetFrom() string
-	GetTo() string
+	GetFrom() JID
+	GetTo() JID
 	GetType() string
 	GetLang() string
 
 	SetID(string)
-	SetFrom(string)
-	SetTo(string)
+	SetFrom(JID)
+	SetTo(JID)
 	SetType(string)
 	SetLang(string)
 }
@@ -29,8 +29,8 @@ func stanzaToStartElement(s Stanza) xml.StartElement {
 	}
 
 	set("id", s.GetID())
-	set("from", s.GetFrom())
-	set("to", s.GetTo())
+	set("from", s.GetFrom().String())
+	set("to", s.GetTo().String())
 	set("type", s.GetType())
 	set("xml:lang", s.GetLang())
 
@@ -48,8 +48,8 @@ func startElementToStanza(se xml.StartElement, s Stanza) {
 	}
 
 	s.SetID(get("id"))
-	s.SetFrom(get("from"))
-	s.SetTo(get("to"))
+	s.SetFrom(JID(get("from")))
+	s.SetTo(JID(get("to")))
 	s.SetType(get("type"))
 	s.SetLang(get("xml:lang"))
 }

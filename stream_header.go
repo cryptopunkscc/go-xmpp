@@ -15,13 +15,13 @@ const (
 type StreamHeader struct {
 	Version   string
 	Namespace string
-	From      string
-	To        string
+	From      JID
+	To        JID
 	ID        string
 }
 
 // NewHeader returns a stream header in client protocol namespace
-func NewHeader(namesapce string, from string, to string) *StreamHeader {
+func NewHeader(namesapce string, from JID, to JID) *StreamHeader {
 	return &StreamHeader{
 		Version:   DefaultVersion,
 		Namespace: namesapce,
@@ -38,10 +38,10 @@ func (header *StreamHeader) XMLStartElement() (start xml.StartElement) {
 	}
 	start.Attr = make([]xml.Attr, 0)
 	if header.To != "" {
-		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", "to"}, header.To})
+		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", "to"}, header.To.String()})
 	}
 	if header.From != "" {
-		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", "from"}, header.From})
+		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", "from"}, header.From.String()})
 	}
 	if header.ID != "" {
 		start.Attr = append(start.Attr, xml.Attr{xml.Name{"", "id"}, header.ID})
@@ -72,9 +72,9 @@ func ParseStreamHeader(start *xml.StartElement) *StreamHeader {
 	for _, a := range start.Attr {
 		switch a.Name.Local {
 		case "to":
-			s.To = a.Value
+			s.To = JID(a.Value)
 		case "from":
-			s.From = a.Value
+			s.From = JID(a.Value)
 		case "id":
 			s.ID = a.Value
 		case "xmlns":

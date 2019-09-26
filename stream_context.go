@@ -14,7 +14,7 @@ type Auth struct {
 
 type Bind struct {
 	XMLName  xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-bind bind"`
-	JID      string   `xml:"jid,omitempty"`
+	JID      JID      `xml:"jid,omitempty"`
 	Resource string   `xml:"resource,omitempty"`
 }
 

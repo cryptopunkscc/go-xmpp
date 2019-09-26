@@ -5,8 +5,8 @@ import "encoding/xml"
 type IQ struct {
 	XMLName xml.Name `xml:"iq"`
 	ID      string   `xml:"id,attr,omitempty"`
-	To      string   `xml:"to,attr,omitempty"`
-	From    string   `xml:"from,attr,omitempty"`
+	To      JID      `xml:"to,attr,omitempty"`
+	From    JID      `xml:"from,attr,omitempty"`
 	Type    string   `xml:"type,attr,omitempty"`
 	Lang    string   `xml:"lang,attr,omitempty"`
 	Container
@@ -34,10 +34,10 @@ func (iq *IQ) Result() bool {
 func (m *IQ) GetID() string { return m.ID }
 
 // GetFrom returns the from field
-func (m *IQ) GetFrom() string { return m.From }
+func (m *IQ) GetFrom() JID { return m.From }
 
 // GetTo returns the to field
-func (m *IQ) GetTo() string { return m.To }
+func (m *IQ) GetTo() JID { return m.To }
 
 // GetType returns the type field
 func (m *IQ) GetType() string { return m.Type }
@@ -49,10 +49,10 @@ func (m *IQ) GetLang() string { return m.Lang }
 func (m *IQ) SetID(s string) { m.ID = s }
 
 // SetFrom sets the from field
-func (m *IQ) SetFrom(s string) { m.From = s }
+func (m *IQ) SetFrom(s JID) { m.From = s }
 
 // SetTo sets the to field
-func (m *IQ) SetTo(s string) { m.To = s }
+func (m *IQ) SetTo(s JID) { m.To = s }
 
 // SetType sets the type field
 func (m *IQ) SetType(s string) { m.Type = s }

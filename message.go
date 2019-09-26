@@ -6,8 +6,8 @@ import "encoding/xml"
 type Message struct {
 	XMLName xml.Name `xml:"message"`
 	ID      string   `xml:"id,attr,omitempty"`
-	To      string   `xml:"to,attr,omitempty"`
-	From    string   `xml:"from,attr,omitempty"`
+	To      JID      `xml:"to,attr,omitempty"`
+	From    JID      `xml:"from,attr,omitempty"`
 	Type    string   `xml:"type,attr,omitempty"`
 	Lang    string   `xml:"lang,attr,omitempty"`
 	Body    string   `xml:"body,omitempty"`
@@ -18,10 +18,10 @@ type Message struct {
 func (m *Message) GetID() string { return m.ID }
 
 // GetFrom returns the from field
-func (m *Message) GetFrom() string { return m.From }
+func (m *Message) GetFrom() JID { return m.From }
 
 // GetTo returns the to field
-func (m *Message) GetTo() string { return m.To }
+func (m *Message) GetTo() JID { return m.To }
 
 // GetType returns the type field
 func (m *Message) GetType() string { return m.Type }
@@ -33,10 +33,10 @@ func (m *Message) GetLang() string { return m.Lang }
 func (m *Message) SetID(s string) { m.ID = s }
 
 // SetFrom sets the from field
-func (m *Message) SetFrom(s string) { m.From = s }
+func (m *Message) SetFrom(s JID) { m.From = s }
 
 // SetTo sets the to field
-func (m *Message) SetTo(s string) { m.To = s }
+func (m *Message) SetTo(s JID) { m.To = s }
 
 // SetType sets the type field
 func (m *Message) SetType(s string) { m.Type = s }
