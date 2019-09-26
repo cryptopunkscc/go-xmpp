@@ -2,6 +2,7 @@ package xmpp
 
 import "encoding/xml"
 
+// IQ represents an IQ stanza
 type IQ struct {
 	XMLName xml.Name `xml:"iq"`
 	ID      string   `xml:"id,attr,omitempty"`
@@ -12,17 +13,19 @@ type IQ struct {
 	Container
 }
 
+// RosterQuery represents a roster query element
 type RosterQuery struct {
 	XMLName xml.Name     `xml:"jabber:iq:roster query"`
 	Items   []RosterItem `xml:"item"`
 }
 
+// RosterItem represents a roster item
 type RosterItem struct {
 	XMLName      xml.Name `xml:"item"`
 	JID          JID      `xml:"jid,attr"`
 	Name         string   `xml:"name,attr,omitempty"`
 	Subscription string   `xml:"subscription,attr,omitempty"`
-	Group        []string `xml:"group"`
+	Group        []string `xml:"group,omitempty"`
 }
 
 // Result returns true if the IQ type is result
@@ -30,36 +33,51 @@ func (iq *IQ) Result() bool {
 	return iq.Type == "result"
 }
 
+// Response constructs an response IQ containing provided items
+func (iq *IQ) Response(items ...interface{}) *IQ {
+	r := &IQ{
+		ID:   iq.ID,
+		From: iq.To,
+		To:   iq.From,
+		Type: "result",
+	}
+	for _, i := range items {
+		iq.AddChild(i)
+	}
+	return r
+}
+
 // GetID returns the id field
-func (m *IQ) GetID() string { return m.ID }
+func (iq *IQ) GetID() string { return iq.ID }
 
 // GetFrom returns the from field
-func (m *IQ) GetFrom() JID { return m.From }
+func (iq *IQ) GetFrom() JID { return iq.From }
 
 // GetTo returns the to field
-func (m *IQ) GetTo() JID { return m.To }
+func (iq *IQ) GetTo() JID { return iq.To }
 
 // GetType returns the type field
-func (m *IQ) GetType() string { return m.Type }
+func (iq *IQ) GetType() string { return iq.Type }
 
 // GetLang returns the lang field
-func (m *IQ) GetLang() string { return m.Lang }
+func (iq *IQ) GetLang() string { return iq.Lang }
 
 // SetID sets the id field
-func (m *IQ) SetID(s string) { m.ID = s }
+func (iq *IQ) SetID(s string) { iq.ID = s }
 
 // SetFrom sets the from field
-func (m *IQ) SetFrom(s JID) { m.From = s }
+func (iq *IQ) SetFrom(s JID) { iq.From = s }
 
 // SetTo sets the to field
-func (m *IQ) SetTo(s JID) { m.To = s }
+func (iq *IQ) SetTo(s JID) { iq.To = s }
 
 // SetType sets the type field
-func (m *IQ) SetType(s string) { m.Type = s }
+func (iq *IQ) SetType(s string) { iq.Type = s }
 
 // SetLang sets the lang field
-func (m *IQ) SetLang(s string) { m.Lang = s }
+func (iq *IQ) SetLang(s string) { iq.Lang = s }
 
+// UnmarshalXML unmarshals an IQ from XML
 func (iq *IQ) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
 	type Raw IQ
 	type comboType struct {
@@ -76,6 +94,7 @@ func (iq *IQ) UnmarshalXML(dec *xml.Decoder, start xml.StartElement) error {
 	return nil
 }
 
+// MarshalXML marshals IQ to XML
 func (iq *IQ) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
 	type Raw IQ
 	type combo struct {
