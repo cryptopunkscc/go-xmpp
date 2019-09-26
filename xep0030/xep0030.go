@@ -36,9 +36,9 @@ type Feature struct {
 
 // Item represents a XEP0030 item
 type Item struct {
-	JID  string `xml:"jid,attr"`
-	Node string `xml:"node,attr,omitempty"`
-	Name string `xml:"name,attr,omitempty"`
+	JID  xmpp.JID `xml:"jid,attr"`
+	Node string   `xml:"node,attr,omitempty"`
+	Name string   `xml:"name,attr,omitempty"`
 }
 
 func init() {
