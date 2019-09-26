@@ -42,7 +42,7 @@ func (iq *IQ) Response(items ...interface{}) *IQ {
 		Type: "result",
 	}
 	for _, i := range items {
-		iq.AddChild(i)
+		r.AddChild(i)
 	}
 	return r
 }
