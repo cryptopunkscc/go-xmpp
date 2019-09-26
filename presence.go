@@ -10,49 +10,16 @@ const (
 )
 
 type Presence struct {
-	XMLName xml.Name `xml:"presence"`
-	ID      string   `xml:"id,attr,omitempty"`
-	To      string   `xml:"to,attr,omitempty"`
-	From    string   `xml:"from,attr,omitempty"`
-	Type    string   `xml:"type,attr,omitempty"`
-	Lang    string   `xml:"lang,attr,omitempty"`
+	XMLName  xml.Name `xml:"presence"`
+	ID       string   `xml:"id,attr,omitempty"`
+	To       string   `xml:"to,attr,omitempty"`
+	From     string   `xml:"from,attr,omitempty"`
+	Type     string   `xml:"type,attr,omitempty"`
+	Lang     string   `xml:"lang,attr,omitempty"`
+	Show     string   `xml:"show,omitempty"`
+	Status   string   `xml:"status,omitempty"`
+	Priority int      `xml:"priority,omitempty"`
 	Container
-}
-
-type PresenceShow struct {
-	XMLName xml.Name `xml:"show"`
-	Show    string   `xml:",chardata"`
-}
-
-type PresenceStatus struct {
-	XMLName xml.Name `xml:"status"`
-	Status  string   `xml:",chardata"`
-}
-
-type PresencePriority struct {
-	XMLName  xml.Name `xml:"priority"`
-	Priority int      `xml:",chardata"`
-}
-
-func (p *Presence) Status() string {
-	if status, ok := p.Child(xml.Name{Local: "status"}).(*PresenceStatus); ok {
-		return status.Status
-	}
-	return ""
-}
-
-func (p *Presence) Show() string {
-	if show, ok := p.Child(xml.Name{Local: "show"}).(*PresenceShow); ok {
-		return show.Show
-	}
-	return ""
-}
-
-func (p *Presence) Priority() int {
-	if prio, ok := p.Child(xml.Name{Local: "priority"}).(*PresencePriority); ok {
-		return prio.Priority
-	}
-	return 0
 }
 
 // GetID returns the id field
@@ -115,9 +82,5 @@ func (p *Presence) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
 }
 
 func initPresence() {
-	AddElement(&PresenceShow{})
-	AddElement(&PresenceStatus{})
-	AddElement(&PresencePriority{})
-
 	AddElement(&Presence{})
 }
