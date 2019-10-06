@@ -1,6 +1,9 @@
 package xmpp
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+)
 
 // A Message represents a message stanza
 type Message struct {
@@ -10,8 +13,19 @@ type Message struct {
 	From    JID      `xml:"from,attr,omitempty"`
 	Type    string   `xml:"type,attr,omitempty"`
 	Lang    string   `xml:"lang,attr,omitempty"`
+	Subject string   `xml:"subject,omitempty"`
 	Body    string   `xml:"body,omitempty"`
+	Thread  string   `xml:"thread,omitempty"`
 	Container
+}
+
+// Reply builds a reply struct to the message
+func (m *Message) Reply(format string, a ...interface{}) *Message {
+	return &Message{
+		To:   m.From,
+		Type: m.Type,
+		Body: fmt.Sprintf(format, a...),
+	}
 }
 
 // GetID returns the id field
