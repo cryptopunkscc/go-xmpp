@@ -1,8 +1,11 @@
 package xmpp
 
 func init() {
-	initStreamContext()
-	initFeatures()
+	addCoreElements()
+	addErrorElements()
+	addTLSElements()
+	addSASLElements()
+	addFeaturesElements()
 	initIQ()
 	initPresence()
 	initMessage()

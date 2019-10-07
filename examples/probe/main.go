@@ -77,17 +77,23 @@ func main() {
 	// Start an XMPP stream
 	stream := xmpp.NewStream(tcp)
 
-	err = stream.WriteHeader(xmpp.NewHeader(xmpp.NamespaceClient, from, vhost))
+	err = stream.WriteHeader(xmpp.NewHeader(xmpp.NamespaceClient, xmpp.JID(from), xmpp.JID(vhost)))
 	if err != nil {
 		panic(err)
 	}
 
 	// Read stream header from the server
-	header, _ := stream.ReadHeader()
+	header, err := stream.ReadHeader()
+	if err != nil {
+		panic(err)
+	}
 	printStreamHeader(header)
 
 	// Read stream features
-	features, _ := stream.ReadFeatures()
+	features, err := stream.ReadFeatures()
+	if err != nil {
+		panic(err)
+	}
 	printFeatures(features)
 
 	// Ready to exchange XMPP messages!

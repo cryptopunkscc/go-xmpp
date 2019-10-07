@@ -31,7 +31,7 @@ func handleClient(conn net.Conn) {
 
 	// Send stream features
 	features := &xmpp.Features{}
-	features.AddChild(&xmpp.FeatureStartTLS{})
+	features.AddChild(&xmpp.StartTLS{})
 	stream.Write(features)
 
 	// Continue reading/writing XMPP messages

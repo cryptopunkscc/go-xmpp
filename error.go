@@ -51,3 +51,7 @@ func (e *Error) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
 
 	return nil
 }
+
+func addErrorElements() {
+	AddElement(&Error{})
+}

@@ -2,6 +2,8 @@ package xmpp
 
 import "encoding/xml"
 
+// SASL structures (urn:ietf:params:xml:ns:xmpp-sasl)
+
 type Abort struct {
 	XMLName xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-sasl abort"`
 }
@@ -12,27 +14,18 @@ type Auth struct {
 	Data      string   `xml:",chardata"`
 }
 
-type Bind struct {
-	XMLName  xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-bind bind"`
-	JID      JID      `xml:"jid,omitempty"`
-	Resource string   `xml:"resource,omitempty"`
-}
-
 type Challenge struct {
 	XMLName xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-sasl challenge"`
 	Data    string   `xml:",chardata"`
-}
-
-type TLSFailure struct {
-	XMLName xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-tls failure"`
 }
 
 type SASLFailure struct {
 	XMLName xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-sasl failure"`
 }
 
-type Proceed struct {
-	XMLName xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-tls proceed"`
+type Mechanisms struct {
+	XMLName    xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-sasl mechanisms"`
+	Mechanisms []string `xml:"mechanism"`
 }
 
 type Response struct {
@@ -40,23 +33,17 @@ type Response struct {
 	Data    string   `xml:",chardata"`
 }
 
-type StartTLS struct {
-	XMLName xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-tls starttls"`
-}
-
 type Success struct {
 	XMLName xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-sasl success"`
+	Data    string   `xml:",chardata"`
 }
 
-func initStreamContext() {
+func addSASLElements() {
 	AddElement(&Abort{})
 	AddElement(&Auth{})
-	AddElement(&Bind{})
 	AddElement(&Challenge{})
-	AddElement(&Error{})
-	AddElement(&TLSFailure{})
 	AddElement(&SASLFailure{})
-	AddElement(&Proceed{})
-	AddElement(&StartTLS{})
+	AddElement(&Mechanisms{})
+	AddElement(&Response{})
 	AddElement(&Success{})
 }

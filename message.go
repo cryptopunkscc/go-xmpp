@@ -28,6 +28,26 @@ func (m *Message) Reply(format string, a ...interface{}) *Message {
 	}
 }
 
+// Normal returns true if the message is of type normal
+func (m *Message) Normal() bool {
+	return (m.Type == "") && (m.Type == "normal")
+}
+
+// Chat returns true if the message is of type chat
+func (m *Message) Chat() bool {
+	return m.Type == "chat"
+}
+
+// Chat returns true if the message is of type error
+func (m *Message) Error() bool {
+	return m.Type == "error"
+}
+
+// Chat returns true if the message is of type headline
+func (m *Message) Headline() bool {
+	return m.Type == "headline"
+}
+
 // GetID returns the id field
 func (m *Message) GetID() string { return m.ID }
 

@@ -7,29 +7,7 @@ type Features struct {
 	Container
 }
 
-type FeatureStartTLS struct {
-	XMLName xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-tls starttls"`
-}
-
-type FeatureRegister struct {
-	XMLName xml.Name `xml:"http://jabber.org/features/iq-register register"`
-}
-
-type FeatureBind struct {
-	XMLName xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-bind bind"`
-}
-
-type FeatureMechanisms struct {
-	XMLName    xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-sasl mechanisms"`
-	Mechanisms []string `xml:"mechanism"`
-}
-
-type FeatureCompression struct {
-	XMLName xml.Name `xml:"http://jabber.org/features/compress compression"`
-	Methods []string `xml:"method"`
-}
-
-func (m *FeatureMechanisms) Include(name string) bool {
+func (m *Mechanisms) Include(name string) bool {
 	if m.Mechanisms == nil {
 		return false
 	}
@@ -70,11 +48,6 @@ func (f *Features) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
 	return enc.EncodeElement(raw, start)
 }
 
-func initFeatures() {
+func addFeaturesElements() {
 	AddElement(&Features{})
-	AddElement(&FeatureStartTLS{})
-	AddElement(&FeatureRegister{})
-	AddElement(&FeatureMechanisms{})
-	AddElement(&FeatureCompression{})
-
 }
