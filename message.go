@@ -30,7 +30,7 @@ func (m *Message) Reply(format string, a ...interface{}) *Message {
 
 // Normal returns true if the message is of type normal
 func (m *Message) Normal() bool {
-	return (m.Type == "") && (m.Type == "normal")
+	return (m.Type == "") || (m.Type == "normal")
 }
 
 // Chat returns true if the message is of type chat
