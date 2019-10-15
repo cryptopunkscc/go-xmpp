@@ -12,11 +12,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cryptopunkscc/go-xmppc/components/disco"
-
 	"github.com/cryptopunkscc/go-xmpp"
-	"github.com/cryptopunkscc/go-xmpp/xep0115"
 	"github.com/cryptopunkscc/go-xmpp/client"
+	"github.com/cryptopunkscc/go-xmpp/client/components/disco"
+	"github.com/cryptopunkscc/go-xmpp/xep0115"
 )
 
 type Caps struct {

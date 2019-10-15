@@ -2,7 +2,7 @@ package roster
 
 import (
 	"github.com/cryptopunkscc/go-xmpp"
-	"github.com/cryptopunkscc/go-xmppc"
+	"github.com/cryptopunkscc/go-xmpp/client"
 )
 
 type RosterItem struct {
