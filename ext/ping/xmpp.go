@@ -1,4 +1,4 @@
-package xep0199
+package ping
 
 import (
 	"encoding/xml"
@@ -6,10 +6,10 @@ import (
 	"github.com/cryptopunkscc/go-xmpp"
 )
 
-type Ping struct {
+type XMPPPing struct {
 	XMLName xml.Name `xml:"urn:xmpp:ping ping"`
 }
 
 func init() {
-	xmpp.AddElement(&Ping{})
+	xmpp.AddElement(&XMPPPing{})
 }

@@ -1,0 +1,26 @@
+<?xml version="1.0"?>W: <stream xmlns="http://etherx.jabber.org/streams" xmlns="jabber:client" to="cryptopunks.cc" version="1.0" xml:lang="en" xmlns:_xmlns="xmlns" _xmlns:stream="http://etherx.jabber.org/streams"><?xml version='1.0'?>R: <stream xmlns="http://etherx.jabber.org/streams" id="4425149490159232965" version="1.0" xml:lang="en" xmlns:_xmlns="xmlns" _xmlns:stream="http://etherx.jabber.org/streams" from="cryptopunks.cc" xmlns="jabber:client">
+R:   <features xmlns="http://etherx.jabber.org/streams">
+R:     <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind" xmlns="urn:ietf:params:xml:ns:xmpp-bind"></bind>
+R:     <session xmlns="urn:ietf:params:xml:ns:xmpp-session" xmlns="urn:ietf:params:xml:ns:xmpp-session">
+R:       <optional xmlns="urn:ietf:params:xml:ns:xmpp-session"></optional>
+R:     </session>
+R:     <c xmlns="http://jabber.org/protocol/caps" ver="MRePpsP+2TprEejkwaKRZINo4G0=" node="http://www.process-one.net/en/ejabberd/" hash="sha-1" xmlns="http://jabber.org/protocol/caps"></c>
+R:     <sm xmlns="urn:xmpp:sm:2" xmlns="urn:xmpp:sm:2"></sm>
+R:     <sm xmlns="urn:xmpp:sm:3" xmlns="urn:xmpp:sm:3"></sm>
+R:     <ver xmlns="urn:xmpp:features:rosterver" xmlns="urn:xmpp:features:rosterver"></ver>
+R:     <csi xmlns="urn:xmpp:csi:0" xmlns="urn:xmpp:csi:0"></csi>
+R:   </features>
+W:   <iq xmlns="jabber:client" id="bind-request" type="set" lang="en">
+W:     <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind" xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+W:       <resource xmlns="urn:ietf:params:xml:ns:xmpp-bind">echo</resource>
+W:     </bind>
+W:   </iq>
+R:   <iq xmlns="jabber:client" type="result" id="bind-request">
+R:     <bind xmlns="urn:ietf:params:xml:ns:xmpp-bind" xmlns="urn:ietf:params:xml:ns:xmpp-bind">
+R:       <jid xmlns="urn:ietf:params:xml:ns:xmpp-bind">lnd3@cryptopunks.cc/echo</jid>
+R:     </bind>
+R:   </iq>
+W:   <presence xmlns="jabber:client" id="1"></presence>
+R:   <presence xmlns="jabber:client" xml:lang="en" to="lnd3@cryptopunks.cc/echo" from="lnd3@cryptopunks.cc/echo" id="1">
+R:     <x xmlns="vcard-temp:x:update" xmlns="vcard-temp:x:update"></x>
+R:   </presence>

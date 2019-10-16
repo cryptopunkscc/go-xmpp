@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/cryptopunkscc/go-xmpp"
-	"github.com/cryptopunkscc/go-xmpp/xep0199"
 )
 
 // Check if Ping satisfies Handler interface
@@ -50,7 +49,7 @@ func (ping *Ping) HandleStanza(s xmpp.Stanza) {
 // Ping sends a ping request to the server
 func (ping *Ping) Ping() {
 	iq := &xmpp.IQ{Type: "get"}
-	iq.AddChild(&xep0199.Ping{})
+	iq.AddChild(&XMPPPing{})
 	ping.session.Write(iq)
 	ping.addPing(iq.GetID())
 }

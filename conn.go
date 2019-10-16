@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"sync"
@@ -14,10 +15,12 @@ type Conn struct {
 	jid JID
 
 	// Internal state
+	transport    io.ReadWriteCloser
 	stream       *Stream
 	localHeader  *StreamHeader
 	remoteHeader *StreamHeader
 	features     *Features
+	logWriter    io.Writer
 	mu           sync.Mutex
 }
 
@@ -28,10 +31,10 @@ type Credentials struct {
 }
 
 // Connect establishes a connection to the XMPP server
-func Connect(host string, jid JID, password string) (*Conn, error) {
+func Connect(host string, jid JID, password string, log io.Writer) (*Conn, error) {
 	var err error
 
-	c := &Conn{}
+	c := &Conn{logWriter: log}
 
 	c.localHeader = &StreamHeader{
 		Namespace: NamespaceClient,
@@ -53,9 +56,10 @@ func Connect(host string, jid JID, password string) (*Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+	c.transport = tcp
 
 	// Establish an XMPP stream over the TCP connection
-	c.stream = NewStream(tcp)
+	c.stream = NewStream(c.loggedTransport())
 	if err := c.openStream(); err != nil {
 		return nil, err
 	}
@@ -78,7 +82,7 @@ func Connect(host string, jid JID, password string) (*Conn, error) {
 	}
 
 	// Reestablish an XMPP stream over the TLS socket
-	c.stream = NewStream(c.stream.Transport())
+	c.stream = NewStream(c.loggedTransport())
 	if err := c.openStream(); err != nil {
 		return nil, err
 	}
@@ -105,6 +109,7 @@ func (c *Conn) Write(msg interface{}) error {
 // Close closes the XMPP connection
 func (c *Conn) Close() {
 	c.stream.Close()
+	c.transport.Close()
 }
 
 // JID returns JID the connection is bound to
@@ -115,6 +120,17 @@ func (c *Conn) JID() JID {
 // Features returns the current stream features
 func (c *Conn) Features() *Features {
 	return c.features
+}
+
+func (c *Conn) loggedTransport() io.ReadWriter {
+	if c.logWriter == nil {
+		return c.transport
+	}
+	return &ReadWriteLogger{
+		target:   c.transport,
+		readLog:  NewXMLLogger(c.logWriter, "R: "),
+		writeLog: NewXMLLogger(c.logWriter, "W: "),
+	}
 }
 
 // openStream opens a bidirectional stream
@@ -133,7 +149,7 @@ func (c *Conn) openStream() (err error) {
 
 // upgradeToTLS establishes a TLS session over an XMPP stream
 func (c *Conn) upgradeToTLS(serverName string) error {
-	tcp, ok := c.stream.Transport().(net.Conn)
+	tcp, ok := c.transport.(net.Conn)
 	if !ok {
 		return errors.New("tcp transport required to start TLS")
 	}
@@ -159,7 +175,8 @@ func (c *Conn) upgradeToTLS(serverName string) error {
 	if tlsConn == nil {
 		return errors.New("tls failed")
 	}
-	c.stream = NewStream(tlsConn)
+	c.transport = tlsConn
+	c.stream = NewStream(c.loggedTransport())
 	return nil
 }
 

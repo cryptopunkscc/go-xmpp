@@ -24,7 +24,7 @@ func Open(handler Handler, cfg *Config) error {
 
 	domain := cfg.JID.Domain().String()
 	server := NewDNSResolver(domain).ClientAddress()
-	conn, err := Connect(server, cfg.JID, cfg.Password)
+	conn, err := Connect(server, cfg.JID, cfg.Password, cfg.Log)
 	if err != nil {
 		return err
 	}
