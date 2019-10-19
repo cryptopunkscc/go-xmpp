@@ -6,150 +6,60 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strings"
 	"sync"
 )
 
 // Conn represents an XMPP connection
 type Conn struct {
-	jid JID
-
-	// Internal state
 	transport    io.ReadWriteCloser
 	stream       *Stream
 	localHeader  *StreamHeader
 	remoteHeader *StreamHeader
 	features     *Features
-	logWriter    io.Writer
+	logger       Logger
 	mu           sync.Mutex
 }
 
-// Credentials holds authentication information
-type Credentials struct {
-	Username string
-	Password string
+type Logger interface {
+	Received([]byte)
+	Sent([]byte)
 }
 
-// Connect establishes a connection to the XMPP server
-func Connect(host string, jid JID, password string, log io.Writer) (*Conn, error) {
+// Connect establishes an XMPP connection
+func Connect(addr string, to JID, logger Logger) (*Conn, error) {
 	var err error
 
-	c := &Conn{logWriter: log}
-
+	c := &Conn{logger: logger}
 	c.localHeader = &StreamHeader{
 		Namespace: NamespaceClient,
-		To:        jid.Domain(),
+		To:        to,
 		Version:   "1.0",
 	}
-	// If no host was provided, extract it from JID
-	if host == "" {
-		host = jid.Domain().String()
-	}
 
-	// Add default port if none is specified
-	if !strings.Contains(host, ":") {
-		host = host + ":5222"
+	finalAddr := resolveSRV(addr, "client")
+
+	// If SRV resolution failed, try the defaults
+	if finalAddr == "" {
+		finalAddr = fmt.Sprintf("%s:%d", addr, defaultClientPort)
 	}
 
 	// Establish a TCP connection
-	tcp, err := net.Dial("tcp", host)
+	tcp, err := net.Dial("tcp", finalAddr)
 	if err != nil {
 		return nil, err
 	}
-	c.transport = tcp
 
 	// Establish an XMPP stream over the TCP connection
-	c.stream = NewStream(c.loggedTransport())
-	if err := c.openStream(); err != nil {
-		return nil, err
-	}
-
-	// Establish a TLS socket over the XMPP stream
-	err = c.upgradeToTLS(jid.Domain().String())
-	if err != nil {
-		return nil, err
-	}
-
-	// Establish an XMPP stream over the TLS socket
-	if err := c.openStream(); err != nil {
-		return nil, err
-	}
-
-	// Authenticate via SASL over the XMPP stream
-	err = c.authenticate(jid.Local(), password)
-	if err != nil {
-		return nil, err
-	}
-
-	// Reestablish an XMPP stream over the TLS socket
-	c.stream = NewStream(c.loggedTransport())
-	if err := c.openStream(); err != nil {
-		return nil, err
-	}
-
-	// Bind
-	err = c.bind(jid.Resource())
-	if err != nil {
+	if err := c.RestartStream(tcp); err != nil {
 		return nil, err
 	}
 
 	return c, nil
 }
 
-// Read reads the next XMPP message from the stream
-func (c *Conn) Read() (interface{}, error) {
-	return c.stream.Read()
-}
-
-// Write writes an XMPP message to the stream
-func (c *Conn) Write(msg interface{}) error {
-	return c.stream.Write(msg)
-}
-
-// Close closes the XMPP connection
-func (c *Conn) Close() {
-	c.stream.Close()
-	c.transport.Close()
-}
-
-// JID returns JID the connection is bound to
-func (c *Conn) JID() JID {
-	return c.jid
-}
-
-// Features returns the current stream features
-func (c *Conn) Features() *Features {
-	return c.features
-}
-
-func (c *Conn) loggedTransport() io.ReadWriter {
-	if c.logWriter == nil {
-		return c.transport
-	}
-	return &ReadWriteLogger{
-		target:   c.transport,
-		readLog:  NewXMLLogger(c.logWriter, "R: "),
-		writeLog: NewXMLLogger(c.logWriter, "W: "),
-	}
-}
-
-// openStream opens a bidirectional stream
-func (c *Conn) openStream() (err error) {
-	err = c.stream.WriteHeader(c.localHeader)
-	if err != nil {
-		return
-	}
-	c.remoteHeader, err = c.stream.ReadHeader()
-	if err != nil {
-		return
-	}
-	c.features, err = c.stream.ReadFeatures()
-	return
-}
-
-// upgradeToTLS establishes a TLS session over an XMPP stream
-func (c *Conn) upgradeToTLS(serverName string) error {
-	tcp, ok := c.transport.(net.Conn)
+// StartTLS upgrades the connection to TLS if possible and replaces the stream
+func (c *Conn) StartTLS(serverName string) error {
+	tcp, ok := c.Transport().(net.Conn)
 	if !ok {
 		return errors.New("tcp transport required to start TLS")
 	}
@@ -175,48 +85,108 @@ func (c *Conn) upgradeToTLS(serverName string) error {
 	if tlsConn == nil {
 		return errors.New("tls failed")
 	}
-	c.transport = tlsConn
-	c.stream = NewStream(c.loggedTransport())
-	return nil
+	return c.RestartStream(tlsConn)
 }
 
-// bind binds the XMPP stream to a resource name
-func (c *Conn) bind(resourceName string) error {
+// Bind binds the XMPP stream to a resource name
+func (c *Conn) Bind(resourceName string) (JID, error) {
 	req := &IQ{
 		Type: "set",
-		From: c.jid,
-		To:   "",
 		ID:   "bind-request",
-		Lang: "en",
 	}
 	req.AddChild(&Bind{
 		Resource: resourceName,
 	})
-
-	if err := c.stream.Write(req); err != nil {
-		panic(err)
+	if err := c.Write(req); err != nil {
+		return "", err
 	}
-
-	msg, err := c.stream.Read()
+	msg, err := c.Read()
 	if err != nil {
-		return err
+		return "", err
 	}
-
 	res, ok := msg.(*IQ)
 	if !ok {
-		return fmt.Errorf("bind: unexpected message: %v", Identify(msg))
+		return "", fmt.Errorf("bind: unexpected message: %v", Identify(msg))
 	}
 	if !res.Result() {
-		return errors.New("unexpected iq response: invalid type attribute")
+		return "", errors.New("unexpected iq response: invalid type attribute")
 	}
 	if res.ID != req.ID {
-		return errors.New("unexpected iq response: invalid id attribute")
+		return "", errors.New("unexpected iq response: invalid id attribute")
 	}
 	bind, ok := res.Child(&Bind{}).(*Bind)
 	if !ok {
-		return errors.New("unexpected iq response: unexpected element type")
+		return "", errors.New("unexpected iq response: unexpected element type")
 	}
-	c.jid = bind.JID
+	return bind.JID, nil
+}
 
-	return nil
+// Transport returns the transport used for the stream
+func (c *Conn) Transport() io.ReadWriteCloser {
+	return c.transport
+}
+
+// Read reads the next XMPP message from the stream
+func (c *Conn) Read() (interface{}, error) {
+	return c.stream.Read()
+}
+
+// Write writes an XMPP message to the stream
+func (c *Conn) Write(msg interface{}) error {
+	return c.stream.Write(msg)
+}
+
+// Close closes the XMPP connection
+func (c *Conn) Close() error {
+	if err := c.stream.Close(); err != nil {
+		return err
+	}
+	return c.transport.Close()
+}
+
+// Features returns the current stream features
+func (c *Conn) Features() *Features {
+	return c.features
+}
+
+// RestartStream restarts the current stream. If transport is provided, it replaces the currently used transport.
+func (c *Conn) RestartStream(transport io.ReadWriteCloser) (err error) {
+	if transport != nil {
+		c.transport = transport
+	}
+	c.stream = NewStream(c.transportWithLogger())
+	err = c.stream.WriteHeader(c.localHeader)
+	if err != nil {
+		return err
+	}
+	c.remoteHeader, err = c.stream.ReadHeader()
+	if err != nil {
+		return err
+	}
+	return c.readFeatures()
+}
+
+// transportWithLogger returns the current transport wrapped with a logger
+func (c *Conn) transportWithLogger() io.ReadWriter {
+	if c.logger == nil {
+		return c.transport
+	}
+	return &tee{
+		target: c.transport,
+		logger: c.logger,
+	}
+}
+
+// readFeatures reads features from the stream and stores them in the struct
+func (c *Conn) readFeatures() error {
+	msg, err := c.Read()
+	if err != nil {
+		return err
+	}
+	if feats, ok := msg.(*Features); ok {
+		c.features = feats
+		return nil
+	}
+	id := Identify(msg)
+	return fmt.Errorf("ReadFeatures: unexpected message: %s", id.Local)
 }

@@ -1,5 +1,7 @@
 package xmpp
 
+import "errors"
+
 // Session defines an interface for session
 type Session interface {
 	JID() JID
@@ -9,6 +11,7 @@ type Session interface {
 }
 
 type session struct {
+	jid     JID
 	conn    *Conn
 	handler Handler
 	id      UniqueID
@@ -21,16 +24,40 @@ type session struct {
 // to the provided handler
 func Open(handler Handler, cfg *Config) error {
 	var err error
+	var jid JID
 
-	domain := cfg.JID.Domain().String()
-	server := NewDNSResolver(domain).ClientAddress()
-	conn, err := Connect(server, cfg.JID, cfg.Password, cfg.Log)
+	// Establish a basic connection
+	conn, err := Connect(cfg.JID.Domain().String(), cfg.JID.Domain(), cfg.Logger)
 	if err != nil {
 		return err
 	}
+
+	tlsFeature := conn.Features().Child(&StartTLS{})
+	if tlsFeature == nil {
+		return errors.New("tls unsupported")
+	}
+
+	err = conn.StartTLS(cfg.JID.Domain().String())
+	if err != nil {
+		return err
+	}
+
+	if cfg.JID != "" {
+		err = conn.Authenticate(cfg.JID.Local(), cfg.Password)
+		if err != nil {
+			return err
+		}
+
+		jid, err = conn.Bind(cfg.JID.Resource())
+		if err != nil {
+			return err
+		}
+	}
+
 	s := &session{
 		conn:    conn,
 		handler: handler,
+		jid:     jid,
 	}
 	if handler != nil {
 		handler.Online(s)
@@ -41,7 +68,7 @@ func Open(handler Handler, cfg *Config) error {
 
 // JID returns the JID session is bound to
 func (s *session) JID() JID {
-	return s.conn.JID()
+	return s.jid
 }
 
 // Write writes a stanza to the XMPP stream

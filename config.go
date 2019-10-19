@@ -1,10 +1,16 @@
 package xmpp
 
-import "io"
+const (
+	TLSRequired = iota
+	TLSPreferred
+	TLSDisabled
+)
 
 // Config represents XMPP client configuration
 type Config struct {
 	JID      JID
 	Password string
-	Log      io.Writer
+	Host     string
+	Logger   Logger
+	TLSMode  int
 }

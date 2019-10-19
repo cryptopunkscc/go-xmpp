@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net"
 	"os"
 
 	"github.com/cryptopunkscc/go-xmpp"
@@ -13,6 +12,8 @@ var port uint
 var host string
 var vhost string
 var from string
+var user string
+var pass string
 
 // usage displays help
 func usage() {
@@ -50,7 +51,7 @@ func printFeatures(features *xmpp.Features) {
 	fmt.Println("Stream features:")
 	for _, f := range features.Children {
 		id := xmpp.Identify(f)
-		fmt.Println("-", id.Local)
+		fmt.Println("-", id.Local, id.Space)
 	}
 	fmt.Println()
 }
@@ -60,43 +61,51 @@ func init() {
 	flag.UintVar(&port, "port", 5222, "Set custom port")
 	flag.StringVar(&vhost, "vhost", "", "Set virtual host to connect to (default same as hostname)")
 	flag.StringVar(&from, "from", "", "Set JID to send in the stream header")
+	flag.StringVar(&user, "user", "", "Log in with this user")
+	flag.StringVar(&pass, "pass", "", "Log in with this password")
 	flag.Usage = usage
 }
 
 func main() {
 	parse() // parse command line options
 
-	// Establish a TCP connection
-	address := fmt.Sprintf("%s:%d", host, port)
-	fmt.Printf("Connecting to %s...\n\n", address)
-	tcp, err := net.Dial("tcp", address)
+	conn, err := xmpp.Connect(host, xmpp.JID(host), nil)
+
 	if err != nil {
-		panic(err)
+		fmt.Println("Error connecting to host:", err)
+		os.Exit(1)
 	}
 
-	// Start an XMPP stream
-	stream := xmpp.NewStream(tcp)
+	fmt.Println("Connected!")
+	printFeatures(conn.Features())
 
-	err = stream.WriteHeader(xmpp.NewHeader(xmpp.NamespaceClient, xmpp.JID(from), xmpp.JID(vhost)))
-	if err != nil {
-		panic(err)
+	if err := conn.StartTLS(host); err != nil {
+		fmt.Println("Failed upgrading to TLS:", err)
+		os.Exit(1)
 	}
 
-	// Read stream header from the server
-	header, err := stream.ReadHeader()
-	if err != nil {
-		panic(err)
+	fmt.Println("Upgraded to TLS.")
+	printFeatures(conn.Features())
+
+	if user != "" {
+		if err := conn.Authenticate(user, pass); err != nil {
+			fmt.Println("Auth error:", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Authenticated!")
+		printFeatures(conn.Features())
+
+		jid, err := conn.Bind("probe")
+		if err != nil {
+			fmt.Println("Bind error", err)
+		}
+
+		fmt.Println("Bound to", jid)
 	}
-	printStreamHeader(header)
 
-	// Read stream features
-	features, err := stream.ReadFeatures()
-	if err != nil {
-		panic(err)
+	if err := conn.Close(); err != nil {
+		fmt.Println("Error closing connection:", err)
+		os.Exit(1)
 	}
-	printFeatures(features)
-
-	// Ready to exchange XMPP messages!
-
-	stream.Close()
 }

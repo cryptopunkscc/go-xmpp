@@ -12,6 +12,12 @@ type Authenticator interface {
 	Challenge(string) string
 }
 
+// Credentials holds authentication information
+type Credentials struct {
+	Username string
+	Password string
+}
+
 type authFunc func(Credentials) Authenticator
 
 func contains(list []string, item string) bool {
@@ -38,8 +44,8 @@ func (c *Conn) bestAuthenticator() (authFunc, error) {
 	return nil, errors.New("authentication failed: no supported mechanisms found")
 }
 
-// authenticate tries to authenticate to the server
-func (c *Conn) authenticate(username, password string) error {
+// Authenticate authenticates to the server and restarts the stream
+func (c *Conn) Authenticate(username, password string) error {
 	authFunc, err := c.bestAuthenticator()
 	if err != nil {
 		return errors.New("authentication failed: all mechanisms unsupported")
@@ -57,14 +63,11 @@ func (c *Conn) authenticate(username, password string) error {
 	if err != nil {
 		return err
 	}
-
 	for {
 		msg, err := c.Read()
-
 		if err != nil {
 			return err
 		}
-
 		switch typed := msg.(type) {
 		case *Challenge:
 			r := &Response{Data: auth.Challenge(typed.Data)}
@@ -73,7 +76,8 @@ func (c *Conn) authenticate(username, password string) error {
 				return err
 			}
 		case *Success:
-			return nil
+			//TODO: Verify success response
+			return c.RestartStream(nil)
 		case *Error:
 			return fmt.Errorf("authentication failed: stream error: %s", typed.Condition)
 		case *SASLFailure:

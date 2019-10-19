@@ -2,7 +2,6 @@ package xmpp
 
 import (
 	"encoding/xml"
-	"fmt"
 	"io"
 	"sync"
 )
@@ -15,6 +14,29 @@ type Stream struct {
 	streamEnd xml.EndElement
 
 	mu sync.Mutex
+}
+
+type Reader interface {
+	Read() (interface{}, error)
+}
+
+type Writer interface {
+	Write(interface{}) error
+}
+
+type Closer interface {
+	Close() error
+}
+
+type ReadWriter interface {
+	Reader
+	Writer
+}
+
+type ReadWriteCloser interface {
+	Reader
+	Writer
+	Closer
 }
 
 // NewStream instantiates a new stream using the provided transport
@@ -38,7 +60,6 @@ func (s *Stream) Read() (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		switch typed := token.(type) {
 		case xml.StartElement:
 			p := &proxy{}
@@ -50,6 +71,7 @@ func (s *Stream) Read() (interface{}, error) {
 
 		case xml.CharData:
 			// Ignore character data
+
 		default:
 			return nil, ErrStreamError
 		}
@@ -57,9 +79,10 @@ func (s *Stream) Read() (interface{}, error) {
 }
 
 // Close closes the XMPP stream. No writes can be performed afterwards.
-func (s *Stream) Close() {
-	s.writeStreamEnd()
+func (s *Stream) Close() error {
+	err := s.writeStreamEnd()
 	s.encoder = nil
+	return err
 }
 
 // Write writes an XMPP message to the stream
@@ -124,20 +147,6 @@ func (s *Stream) ReadHeader() (*StreamHeader, error) {
 			return nil, ErrStreamError
 		}
 	}
-}
-
-// ReadFeatures reads stream features from the server. Should only be called
-// by the client directly after receiveng a stream header.
-func (s *Stream) ReadFeatures() (*Features, error) {
-	msg, err := s.Read()
-	if err != nil {
-		return nil, err
-	}
-	if feats, ok := msg.(*Features); ok {
-		return feats, nil
-	}
-	id := Identify(msg)
-	return nil, fmt.Errorf("ReadFeatures: unexpected message: %s", id.Local)
 }
 
 // writeStreamEnd writes the XMPP stream end element
