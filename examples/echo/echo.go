@@ -95,6 +95,7 @@ func (app *App) Run(cfg *config) {
 	err := xmpp.Open(&app.Broadcast, &xmpp.Config{
 		JID:      cfg.JID,
 		Password: cfg.Password,
+		TLSMode:  xmpp.TLSPreferred,
 	})
 	if err != nil {
 		panic(err)

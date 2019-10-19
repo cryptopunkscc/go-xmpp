@@ -36,6 +36,7 @@ func Connect(addr string, to JID, logger Logger) (*Conn, error) {
 		Version:   "1.0",
 	}
 
+	//TODO: Push DNS resolution to a higher layer?
 	finalAddr := resolveSRV(addr, "client")
 
 	// If SRV resolution failed, try the defaults

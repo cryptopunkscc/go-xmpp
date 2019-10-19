@@ -13,7 +13,8 @@ type Proceed struct {
 }
 
 type StartTLS struct {
-	XMLName xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-tls starttls"`
+	XMLName  xml.Name `xml:"urn:ietf:params:xml:ns:xmpp-tls starttls"`
+	Required *string  `xml:"required,omitempty"`
 }
 
 func addTLSElements() {

@@ -1,6 +1,8 @@
 package xmpp
 
-import "errors"
+import (
+	"errors"
+)
 
 // Session defines an interface for session
 type Session interface {
@@ -32,14 +34,33 @@ func Open(handler Handler, cfg *Config) error {
 		return err
 	}
 
-	tlsFeature := conn.Features().Child(&StartTLS{})
-	if tlsFeature == nil {
-		return errors.New("tls unsupported")
+	const (
+		Unsupported = iota
+		Available
+		Required
+	)
+
+	// Check StartTLS availability
+	tlsFeature := conn.Features().Child(&StartTLS{}).(*StartTLS)
+	tlsSupport := Unsupported // Assume TLS unsupported
+	if tlsFeature != nil {
+		tlsSupport = Available // It is available
+		if tlsFeature.Required != nil {
+			tlsSupport = Required // It's required!
+		}
 	}
 
-	err = conn.StartTLS(cfg.JID.Domain().String())
-	if err != nil {
-		return err
+	if (tlsSupport == Unsupported) && (cfg.TLSMode == TLSRequired) {
+		return errors.New("tls required, but unsupported")
+	}
+	if (tlsSupport == Required) && (cfg.TLSMode == TLSDisabled) {
+		return errors.New("tls disabled, but required")
+	}
+	if (cfg.TLSMode != TLSDisabled) && (tlsSupport != Unsupported) {
+		err = conn.StartTLS(cfg.JID.Domain().String())
+		if err != nil {
+			return err
+		}
 	}
 
 	if cfg.JID != "" {
@@ -47,7 +68,6 @@ func Open(handler Handler, cfg *Config) error {
 		if err != nil {
 			return err
 		}
-
 		jid, err = conn.Bind(cfg.JID.Resource())
 		if err != nil {
 			return err
