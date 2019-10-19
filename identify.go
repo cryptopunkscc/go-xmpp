@@ -42,15 +42,24 @@ func extractTypeName(s interface{}) xml.Name {
 
 // Extract XML element name and namespace from a structure
 func extractXMLName(s interface{}) (id xml.Name) {
-	typ := reflect.TypeOf(s)
-	if typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
+	val := reflect.ValueOf(s)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
 	}
 
 	// Get the field
-	field, ok := typ.FieldByName("XMLName")
+	field, ok := val.Type().FieldByName("XMLName")
 	if !ok {
 		return
+	}
+
+	// Get the XMLName value
+	value := val.FieldByName("XMLName")
+	if value.Type().AssignableTo(reflect.TypeOf(xml.Name{})) {
+		id = value.Interface().(xml.Name)
+		if id.Local != "" {
+			return
+		}
 	}
 
 	// Get the XML tag
